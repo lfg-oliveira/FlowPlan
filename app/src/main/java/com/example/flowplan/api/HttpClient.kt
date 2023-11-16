@@ -23,7 +23,7 @@ class HttpClient(
         }
     }
     override fun get(url: String, id: Int?): Result<String?> {
-        val reqUrl = if (id == null) "${baseUrl}/${url}" else "${baseUrl}/${url}/${id}"
+        val reqUrl = if (id == null) "${baseUrl}${url}" else "${baseUrl}${url}/${id}"
         val req = Request.Builder()
             .addHeader("session_token", getToken())
             .url(reqUrl)

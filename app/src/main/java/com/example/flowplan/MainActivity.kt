@@ -43,17 +43,24 @@ import com.example.flowplan.activities.RegisterActivity
 import com.example.flowplan.api.HttpClient
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json.Default.decodeFromString
+import java.io.File
 import java.lang.Exception
 
 @Serializable
 data class JWTBody(val exp: Long, val uid: Int, val iat: Int)
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        var loggedIn: Boolean = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
         setContent {
-            val cacheFile = cacheDir
+            val cacheFile = File(cacheDir, "jwt_token")
+            cacheFile.setReadable(true)
+            cacheFile.setWritable(true)
             var loggedIn by remember {
                 mutableStateOf(false)
             }
@@ -69,8 +76,6 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 loggedIn = false
             } finally {
-                var initial = if (loggedIn) "dashboard" else "login"
-
                 FlowPlanTheme {
                     val navController = rememberNavController()
                     // A surface container using the 'background' color from the theme
@@ -78,19 +83,18 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        NavHost(navController = navController, startDestination = initial) {
+                        NavHost(navController = navController, startDestination = "login") {
                             composable("dashboard") {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
                                         .fillMaxWidth(.7f)
                                         .verticalScroll(
-                                            state = ScrollState(0),
-                                            enabled = true
+                                            state = ScrollState(0), enabled = true
                                         )
                                 ) {
                                     Text(
-                                        text = "Dashboard Title",
+                                        text = "Status",
                                         textAlign = TextAlign.Center,
                                         overflow = TextOverflow.Ellipsis,
                                         fontSize = 44.sp,
@@ -98,17 +102,13 @@ class MainActivity : ComponentActivity() {
 
                                     ElevatedCard(
                                         elevation = CardDefaults.cardElevation(
-                                            defaultElevation = 10.dp,
-                                            pressedElevation = 1.dp
-                                        ),
-                                        modifier = Modifier
-                                            .size(width = 300.dp, height = 150.dp)
+                                            defaultElevation = 10.dp, pressedElevation = 1.dp
+                                        ), modifier = Modifier.size(width = 300.dp, height = 150.dp)
                                     ) {
                                         TextButton(
                                             onClick = { navController.navigate("details/1") },
                                             modifier = Modifier.align(Alignment.CenterHorizontally)
-                                        )
-                                        {
+                                        ) {
                                             Text(text = "Hello Card")
                                         }
 
@@ -118,58 +118,24 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                 }
+                                FlowplanNavbar().NavBar(navController = navController, selected = 1)
                             }
                             composable("new") {
                                 AddTasks(uid, HttpClient(appCache = cacheFile)).AddTaskScreen()
+                                FlowplanNavbar().NavBar(navController = navController, selected = 2)
                             }
                             composable("login") {
                                 LoginActivity(HttpClient(appCache = cacheFile)).Login(
-                                    navController,
-                                    cacheFile = cacheFile
+                                    navController, cacheFile = cacheFile
                                 )
                             }
                             composable("register") {
-                                RegisterActivity(HttpClient(appCache = cacheFile))
-                                    .Register(navController, cacheFile)
+                                RegisterActivity(HttpClient(appCache = cacheFile)).Register(
+                                    navController,
+                                    cacheFile
+                                )
                             }
-                        }
-                        if (loggedIn) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Bottom
 
-                            ) {
-                                BottomAppBar {
-                                    NavigationBarItem(
-                                        selected = true,
-                                        label = {
-                                            Text(text = "Dashboard")
-                                        },
-                                        onClick = {
-                                            navController.popBackStack()
-                                            navController.navigate("dashboard")
-                                        },
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.Rounded.List,
-                                                contentDescription = "Go to Dashboard"
-                                            )
-                                        })
-                                    NavigationBarItem(
-                                        selected = false,
-                                        onClick = { navController.navigate("new") },
-                                        label = {
-                                            Text(text = "New")
-                                        },
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Add,
-                                                contentDescription = "Create new Task"
-                                            )
-                                        })
-
-                                }
-                            }
                         }
                     }
                 }

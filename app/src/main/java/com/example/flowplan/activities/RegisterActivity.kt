@@ -1,5 +1,6 @@
 package com.example.flowplan.activities
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.coroutines.coroutineContext
+
 @Serializable
 data class RegisterData(val email: String, val password: String)
 class RegisterActivity(private val client: ApiAdapter) {
@@ -58,7 +60,13 @@ class RegisterActivity(private val client: ApiAdapter) {
         }
         val clickHandle: () -> Unit = {
             coroutineScope.launch {
-                val response = makeRegisterRequest(login, pw)
+                var response: Result<String?> = Result.success(null)
+                try {
+                    response = makeRegisterRequest(login, pw)
+                }
+                catch (e: Throwable) {
+                    failed = true
+                }
                 response.onFailure {
                     login = ""
                     pw = ""
@@ -115,6 +123,7 @@ class RegisterActivity(private val client: ApiAdapter) {
                     LocalContext.current, "Failed registering." +
                             "Is your internet active?", Toast.LENGTH_SHORT
                 ).show()
+                failed = false
             }
         }
     }
@@ -122,9 +131,10 @@ class RegisterActivity(private val client: ApiAdapter) {
     private suspend fun makeRegisterRequest(login: String, pw: String): Result<String?> {
         val data = RegisterData(login, pw)
         val str = Json.encodeToString(value = data)
+        Log.d("INFO", str)
 
         return withContext(Dispatchers.IO) {
-            client.post("/user/register", str)
+            client.post("user/register", str)
         }
     }
 }

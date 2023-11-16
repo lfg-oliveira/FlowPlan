@@ -1,5 +1,7 @@
 package com.example.flowplan.activities
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,12 +47,15 @@ class LoginActivity(private val httpClient: ApiAdapter) {
         val str = Json.encodeToString(value = data)
 
         return withContext(Dispatchers.IO) {
-            httpClient.post("/user/login", str)
+            httpClient.post("user/login", str)
         }
     }
 
     @Composable
     fun Login(navController: NavHostController, cacheFile: File?) {
+        if (cacheFile?.readBytes()?.toString()?.isEmpty() == true) {
+            navController.navigate("dashboard")
+        }
         var login by remember {
             mutableStateOf("")
         }
@@ -70,26 +75,39 @@ class LoginActivity(private val httpClient: ApiAdapter) {
 
         val clickHandle: () -> Unit = {
             coroutineScope.launch {
-                val response = makeLoginRequest(login, pw)
+                var response: Result<String?> = Result.success(null)
+                try {
+                    response = makeLoginRequest(login, pw)
+                } catch (e: Throwable) {
+                    failed = true
+                    return@launch
+                }
                 response.onFailure {
                     login = ""
                     pw = ""
                     failed = true
+                    Log.d("INFO", it.toString())
                     return@launch
                 }
                 response.onSuccess { res ->
                     res?.toByteArray()?.let {
-                        cacheFile?.writeBytes(it);
+                        cacheFile?.writeBytes(it)
                         token = it.toString()
                     }
+                    navController.navigate("dashboard")
                 }
             }
+        }
+        val toast: @Composable () -> Unit = {
+            Toast.makeText(
+                LocalContext.current, "Couldn't Login", Toast.LENGTH_SHORT
+            )
+            failed = false
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(
-                10.dp,
-                alignment = Alignment.CenterVertically
+                10.dp, alignment = Alignment.CenterVertically
             ),
 
             modifier = Modifier.padding(15.dp, 0.dp)
@@ -98,7 +116,9 @@ class LoginActivity(private val httpClient: ApiAdapter) {
 
             Row {
                 Text(
-                    text = "FlowPlan", fontSize = 65.sp, fontWeight = FontWeight.Bold,
+                    text = "FlowPlan",
+                    fontSize = 65.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.absoluteOffset(0.dp, (-100).dp)
                 )
             }
@@ -120,6 +140,9 @@ class LoginActivity(private val httpClient: ApiAdapter) {
                     Text(text = "Login")
                 }
             }
+            if(failed) {
+                toast()
+            }
         }
     }
 }
@@ -129,7 +152,9 @@ class LoginActivity(private val httpClient: ApiAdapter) {
 fun LoginPreview() {
     FlowPlanTheme {
         Surface(modifier = Modifier.fillMaxHeight()) {
-            LoginActivity(HttpClient(appCache = File(""))).Login(NavHostController(LocalContext.current), null)
+            LoginActivity(HttpClient(appCache = File(""))).Login(
+                NavHostController(LocalContext.current), null
+            )
         }
     }
 }

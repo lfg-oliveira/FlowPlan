@@ -11,8 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.flowplan.model.Task
 
-class CardComponent {
+class CardComponent(private val task: Task) {
     @Composable
     fun TaskCard(navController: NavHostController) {
         ElevatedCard(
@@ -24,13 +25,12 @@ class CardComponent {
                 .size(width = 300.dp, height = 150.dp)
         ) {
             TextButton(
-                onClick = { navController.navigate("details/1") },
+                onClick = { navController.navigate("details/${task.id}") },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             {
-                Text(text = "Hello Card")
+                Text(text = task.title)
             }
-
             SuggestionChip(
                 onClick = {},
                 label = { Text("Common activity") },
