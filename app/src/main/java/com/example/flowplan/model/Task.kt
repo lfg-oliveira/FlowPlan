@@ -1,10 +1,12 @@
 package com.example.flowplan.model
 
-import java.util.UUID
+import kotlinx.serialization.Serializable
 
-data class Task( val taskId: String,
+@Serializable
+data class Task( val taskId: Int?,
          var title: String,
          var description: String,
-         var tags: MutableList<Tag>,
-         var asignees: MutableList<User>)
+//         var tags: MutableList<Tag>,
+//         var asignees: MutableList<User>
+)
 
